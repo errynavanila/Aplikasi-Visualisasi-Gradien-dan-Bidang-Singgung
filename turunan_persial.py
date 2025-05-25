@@ -1,62 +1,64 @@
 import streamlit as st
-import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
-# Judul aplikasi
-st.title("📊 Aplikasi Turunan Parsial dan Visualisasi 3D")
-st.subheader("Kasus: Model Biaya Produksi (Ekonomi)")
+st.title("📈 Aplikasi Turunan Parsial - Fungsi Keuntungan Produksi")
 
-# Input simbolik
-x, y = sp.symbols('x y')
-fungsi_str = st.text_input("Masukkan fungsi f(x, y):", "100*x + 80*y + 10*x**2 + 5*y**2")
+st.markdown("""
+Fungsi keuntungan produksi yang digunakan adalah:
 
-try:
-    f = sp.sympify(fungsi_str)
-    fx = sp.diff(f, x)
-    fy = sp.diff(f, y)
+\\[
+f(x, y) = 50x + 40y - x^2 - y^2 - xy
+\\]
 
-    st.latex(r"f(x, y) = " + sp.latex(f))
-    st.latex(r"\frac{\partial f}{\partial x} = " + sp.latex(fx))
-    st.latex(r"\frac{\partial f}{\partial y} = " + sp.latex(fy))
+di mana:
+- \\( x \\): jumlah produk A
+- \\( y \\): jumlah produk B
+""")
 
-    # Titik evaluasi
-    x0 = st.number_input("Nilai x₀:", value=2.0)
-    y0 = st.number_input("Nilai y₀:", value=3.0)
+# Input titik evaluasi
+x0 = st.number_input("Masukkan nilai x₀", value=2.0)
+y0 = st.number_input("Masukkan nilai y₀", value=2.0)
 
-    # Evaluasi fungsi dan turunannya di (x0, y0)
-    f_val = float(f.subs({x: x0, y: y0}))
-    fx_val = float(fx.subs({x: x0, y: y0}))
-    fy_val = float(fy.subs({x: x0, y: y0}))
+# Fungsi keuntungan
+def f(x, y):
+    return 50*x + 40*y - x**2 - y**2 - x*y
 
-    st.write(f"Nilai fungsi di titik (x₀, y₀): {f_val}")
-    st.write(f"Gradien di titik (x₀, y₀): (∂f/∂x, ∂f/∂y) = ({fx_val}, {fy_val})")
+# Turunan parsial
+def dfdx(x, y):
+    return 50 - 2*x - y
 
-    st.subheader("📈 Grafik Permukaan & Bidang Singgung")
+def dfdy(x, y):
+    return 40 - 2*y - x
 
-    # Buat meshgrid untuk permukaan dan bidang singgung
-    x_vals = np.linspace(x0 - 2, x0 + 2, 50)
-    y_vals = np.linspace(y0 - 2, y0 + 2, 50)
-    X, Y = np.meshgrid(x_vals, y_vals)
+# Evaluasi fungsi dan gradien
+z0 = f(x0, y0)
+grad_x = dfdx(x0, y0)
+grad_y = dfdy(x0, y0)
 
-    # Permukaan asli
-    Z = sp.lambdify((x, y), f, "numpy")(X, Y)
+st.write(f"🔹 Nilai fungsi f(x, y) di ({x0}, {y0}) adalah **{z0}**")
+st.write(f"🔸 Turunan parsial ∂f/∂x di ({x0}, {y0}) = **{grad_x}**")
+st.write(f"🔸 Turunan parsial ∂f/∂y di ({x0}, {y0}) = **{grad_y}**")
 
-    # Bidang singgung di titik (x0, y0)
-    Z_tangent = f_val + fx_val * (X - x0) + fy_val * (Y - y0)
+# Grid untuk grafik 3D
+x = np.linspace(0, 5, 50)
+y = np.linspace(0, 5, 50)
+X, Y = np.meshgrid(x, y)
+Z = f(X, Y)
 
-    # Plotting 3D
-    fig = plt.figure(figsize=(10, 6))
-    ax = fig.add_subplot(111, projection="3d")
-    ax.plot_surface(X, Y, Z, cmap="viridis", alpha=0.7)
-    ax.plot_surface(X, Y, Z_tangent, color="red", alpha=0.5)
+# Bidang singgung
+Z_tangent = z0 + grad_x * (X - x0) + grad_y * (Y - y0)
 
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("f(x, y)")
-    ax.set_title("Permukaan f(x, y) dan bidang singgung di titik (x₀, y₀)")
+# Plot grafik
+fig = plt.figure(figsize=(10, 6))
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(X, Y, Z, cmap='viridis', alpha=0.7)
+ax.plot_surface(X, Y, Z_tangent, color='red', alpha=0.5)
 
-    st.pyplot(fig)
+ax.set_xlabel("x (produk A)")
+ax.set_ylabel("y (produk B)")
+ax.set_zlabel("f(x, y) = Keuntungan")
+ax.set_title("📊 Permukaan Fungsi Keuntungan dan Bidang Singgung")
 
-except Exception as e:
-    st.error(f"Terjadi kesalahan: {e}")
+st.pyplot(fig)
